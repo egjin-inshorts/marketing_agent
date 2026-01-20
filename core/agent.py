@@ -42,7 +42,7 @@ class MarketingResearchAgent:
         self.research_history_path.mkdir(exist_ok=True)
 
         self.embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+            model_name=self.config['rag']['embedding_model']
         )
     
     def ingest_documents(self, doc_paths: List[str]):

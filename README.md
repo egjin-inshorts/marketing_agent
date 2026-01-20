@@ -200,6 +200,7 @@ rag:
   chunk_size: 1000    # 문서 분할 크기 (자)
   chunk_overlap: 200  # 청크 간 오버랩
   top_k: 5            # 검색 결과 개수
+  embedding_model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"  # 임베딩 모델
 
 prompts:
   research_initial: |  # 초기 리서치 프롬프트 ({rag_context}, {query} 사용)
@@ -278,11 +279,10 @@ agent.semantic_diff(f1, f2, threshold=0.25)
 
 **Chunk Size 조정**: `core/agent.py`의 `_chunk_findings` 메서드에서 `chunk_size` 파라미터 수정
 
-**임베딩 모델 변경**: `core/agent.py`의 `__init__`에서 `model_name` 수정
-```python
-self.embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L12-v2"  # 더 빠른 모델
-)
+**임베딩 모델 변경**: `config.yaml`의 `rag.embedding_model`에서 모델 변경
+```yaml
+rag:
+  embedding_model: "sentence-transformers/all-MiniLM-L12-v2"  # 더 빠른 모델
 ```
 
 ## 성능 지표
