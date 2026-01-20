@@ -4,6 +4,26 @@ AI 기반 마케팅 리서치 자동화 도구
 
 Google Gemini API와 RAG(Retrieval-Augmented Generation)를 활용하여 시장 트렌드 분석, 경쟁사 동향 조사, 마케팅 인사이트 도출을 자동화합니다. 사내 문서를 기반으로 맥락에 맞는 리서치 결과를 생성하고, 시간에 따른 변화를 추적합니다.
 
+## 목차
+
+- [주요 기능](#주요-기능)
+- [사전 요구사항](#사전-요구사항)
+- [설치](#설치)
+- [사용법](#사용법)
+  - [워크플로우](#워크플로우)
+  - [CLI 명령어](#cli-명령어)
+  - [TXT 내보내기 (export_txt.py)](#txt-내보내기-export_txtpy)
+  - [출력 예시 (diff)](#출력-예시-diff)
+- [디렉토리 구조](#디렉토리-구조)
+- [설정 (config.yaml)](#설정-configyaml)
+  - [프롬프트 커스터마이징](#프롬프트-커스터마이징)
+- [Python API](#python-api)
+- [Semantic Diff 상세](#semantic-diff-상세)
+  - [반환값 구조](#반환값-구조)
+  - [거리 해석](#거리-해석)
+  - [튜닝](#튜닝)
+- [성능 지표](#성능-지표)
+
 ## 주요 기능
 
 - **RAG 기반 리서치**: 사내 문서(제품 정보, 경쟁사 분석 등)를 벡터 DB에 저장하고, 리서치 시 관련 컨텍스트를 자동으로 참조
@@ -203,11 +223,88 @@ rag:
   embedding_model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"  # 임베딩 모델
 
 prompts:
-  research_initial: |  # 초기 리서치 프롬프트 ({rag_context}, {query} 사용)
+  research_initial: |  # 초기 리서치 프롬프트
     ...
-  research_update: |   # 업데이트 프롬프트 ({rag_context}, {query}, {previous_research} 사용)
+  research_update: |   # 업데이트 프롬프트
     ...
 ```
+
+### 프롬프트 커스터마이징
+
+`config.yaml`의 `prompts` 섹션에서 LLM에게 전달되는 프롬프트 템플릿을 완전히 제어할 수 있습니다. 이를 통해 출력 형식, 분석 관점, 언어 등을 자유롭게 조정할 수 있습니다.
+
+#### 사용 가능한 플레이스홀더
+
+| 플레이스홀더 | 설명 | 사용 가능한 프롬프트 |
+|-------------|------|---------------------|
+| `{rag_context}` | RAG로 검색된 사내 문서 컨텍스트 | `research_initial`, `research_update` |
+| `{query}` | 사용자가 입력한 리서치 질문 | `research_initial`, `research_update` |
+| `{previous_research}` | 이전 버전의 리서치 결과 | `research_update` |
+
+#### 커스터마이징 예시
+
+**영문 출력으로 변경:**
+```yaml
+prompts:
+  research_initial: |
+    You are a marketing research expert.
+
+    **Internal Documents:**
+    {rag_context}
+
+    **Research Question:** {query}
+
+    **Output Format:**
+    # Key Findings
+    - (bullet points)
+
+    # Data & Statistics
+    - (include specific numbers)
+
+    # Actionable Insights
+    - (strategies tailored to company context)
+
+    # Sources
+    - (reference links)
+```
+
+**특정 산업 분석에 맞춤:**
+```yaml
+prompts:
+  research_initial: |
+    당신은 B2B SaaS 마케팅 전문가입니다.
+
+    **사내 문서:**
+    {rag_context}
+
+    **분석 요청:** {query}
+
+    **지시사항:**
+    1. SaaS 비즈니스 관점에서 분석하세요 (MRR, CAC, LTV 등)
+    2. PLG(Product-Led Growth) 전략 중심으로 인사이트를 도출하세요
+
+    **출력 형식:**
+    # SaaS 메트릭스 분석
+    # 성장 전략 제안
+    # 경쟁사 PLG 벤치마킹
+```
+
+**간결한 요약 형식:**
+```yaml
+prompts:
+  research_initial: |
+    **컨텍스트:** {rag_context}
+    **질문:** {query}
+
+    3문장 이내로 핵심만 답변하세요.
+```
+
+#### 프롬프트 작성 팁
+
+1. **구조화된 출력**: 마크다운 헤딩(`#`, `##`)과 불릿 포인트(`-`)를 사용하면 파싱 및 가독성이 좋아집니다
+2. **역할 지정**: "당신은 ~전문가입니다"로 시작하면 더 전문적인 답변을 얻을 수 있습니다
+3. **명확한 지시**: 원하는 분석 관점, 포함할 요소, 제외할 요소를 구체적으로 명시하세요
+4. **플레이스홀더 필수**: `{rag_context}`와 `{query}`는 반드시 포함해야 합니다. 누락 시 RAG 컨텍스트나 질문이 전달되지 않습니다
 
 ## Python API
 
